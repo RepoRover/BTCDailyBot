@@ -1,6 +1,6 @@
-use std::sync::Arc;
-
+use crate::server::{chats::handle_subscription, chats_utils::send_help};
 use chrono::{Datelike, Timelike, Utc};
+use std::sync::Arc;
 use teloxide::{prelude::*, RequestError};
 use tokio::{
     sync::{broadcast, Mutex},
@@ -43,10 +43,7 @@ impl ClientBot {
                 Some(text) => match parse_command(text) {
                     Some(command) => match command {
                         Commands::Help => send_help(bot, msg).await?,
-                        Commands::Subscribe => {
-                            bot.send_message(msg.chat.id, "Subscribe command received")
-                                .await?
-                        }
+                        Commands::Subscribe => handle_subscription(bot, msg).await?,
                         Commands::Unsubscribe => {
                             bot.send_message(msg.chat.id, "Unsubscribe command received")
                                 .await?
@@ -70,14 +67,14 @@ impl ClientBot {
         mut shutdown_signal: broadcast::Receiver<()>,
         day: Arc<Mutex<u32>>,
     ) -> Result<(), RequestError> {
-        let mut interval: time::Interval = time::interval(time::Duration::from_secs(1));
+        let mut interval: time::Interval = time::interval(time::Duration::from_secs(60));
         loop {
             tokio::select! {
                 _ = interval.tick() => {
                     Self::daily_stats(self, &day).await?;
                 }
                 _ = shutdown_signal.recv() => {
-                    println!("Shutting down periodic task");
+                    eprintln!("Shutting down periodic task");
                     return Ok(())
                 }
             }
@@ -98,18 +95,4 @@ impl ClientBot {
         }
         Ok(())
     }
-}
-
-async fn send_help(bot: Bot, msg: Message) -> Result<Message, RequestError> {
-    println!("{}", msg.chat.id);
-    bot.send_message(
-        msg.chat.id,
-        r#"These commands are available:
-
-/help - Get this message
-/subscribe - Subscribe to the daily Bitcoin statistics
-/unsubscribe - Unsubscribe from the daily Bitcoin statistics
-/getstats - Get Bitoin statistics now with no need to be subscribed"#,
-    )
-    .await
 }

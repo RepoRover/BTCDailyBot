@@ -9,5 +9,8 @@ edition = "2021"
 chrono = "0.4.31"
 dotenv = "0.15.0"
 futures = "0.3.29"
+lazy_static = "1.4.0"
+once_cell = "1.19.0"
+sqlx = {version = "0.7.3", features = ["postgres", "runtime-tokio-rustls", "uuid"]}
 teloxide = "0.12.2"
-tokio = {version = "1.35.1", features = ["macros", "rt-multi-thread"]}
+tokio = {version = "1.35.1", features = ["full"]}
