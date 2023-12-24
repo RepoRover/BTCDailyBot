@@ -1,6 +1,6 @@
 use crate::server::db::POOL;
 use futures::future::join_all;
-use sqlx::{prelude::FromRow, types::Uuid};
+use sqlx::{postgres::PgRow, prelude::FromRow, types::Uuid, Row};
 use std::sync::Arc;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
@@ -15,15 +15,28 @@ pub struct Chat {
 
 pub async fn get_chat(telegram_chat_id: String) -> Result<Option<Chat>, sqlx::Error> {
     let pool: &Arc<sqlx::Pool<sqlx::Postgres>> = POOL.get().expect("Pool has not been initialized");
-    let chat: Option<Chat> = sqlx::query_as!(
-        Chat,
-        "SELECT * FROM chats WHERE telegram_chat_id = $1",
-        telegram_chat_id
-    )
-    .fetch_optional(&**pool)
-    .await?;
+    let q = "SELECT * FROM chats WHERE telegram_chat_id = $1";
+    // let chat: Option<Chat> = sqlx::query_as!(
+    //     Chat,
+    //     "SELECT * FROM chats WHERE telegram_chat_id = $1",
+    //     telegram_chat_id
+    // )
+    // .fetch_optional(&**pool)
+    // .await?;
+    let chat: Option<PgRow> = sqlx::query(q)
+        .bind(telegram_chat_id)
+        .fetch_optional(&**pool)
+        .await?;
 
-    Ok(chat)
+    match chat {
+        Some(row) => Ok(Some(Chat {
+            chat_id: row.get("chat_id"),
+            telegram_chat_id: row.get("telegram_chat_id"),
+        })),
+        None => Ok(None),
+    }
+
+    // Ok(chat)
 }
 
 pub async fn subscribe(telegram_chat_id: String) -> Result<(), sqlx::Error> {
@@ -63,7 +76,7 @@ pub async fn send_daily_stats_all(bot: Arc<Bot>) -> Result<(), sqlx::Error> {
         false => {
             format!(
                 r#"BTCUSDT statistics:
-            
+
 Price - {} USDT"#,
                 stats.current_price.unwrap()
             )
@@ -78,9 +91,6 @@ Price - {} USDT"#,
         let stats_text_clone = stats_text.clone();
 
         let task = tokio::spawn(async move {
-            // match bot_clone
-            //     .send_message(chat_id.clone(), stats_text_clone)
-            //     .await
             match send_daily_stats_single(chat_id.clone(), &bot_clone, stats_text_clone).await {
                 Ok(_) => {}
                 Err(e) => {
