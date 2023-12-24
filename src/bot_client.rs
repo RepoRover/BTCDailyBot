@@ -1,4 +1,7 @@
-use crate::server::{chats::handle_subscription, chats_utils::send_help};
+use crate::server::{
+    chats::{handle_daily, handle_stats_now, handle_subscription, handle_unsubscribtion},
+    chats_utils::send_help,
+};
 use chrono::{Datelike, Timelike, Utc};
 use std::sync::Arc;
 use teloxide::{prelude::*, RequestError};
@@ -44,14 +47,8 @@ impl ClientBot {
                     Some(command) => match command {
                         Commands::Help => send_help(bot, msg).await?,
                         Commands::Subscribe => handle_subscription(bot, msg).await?,
-                        Commands::Unsubscribe => {
-                            bot.send_message(msg.chat.id, "Unsubscribe command received")
-                                .await?
-                        }
-                        Commands::GetStats => {
-                            bot.send_message(msg.chat.id, "You are getting Bitcoin statistics now")
-                                .await?
-                        }
+                        Commands::Unsubscribe => handle_unsubscribtion(bot, msg).await?,
+                        Commands::GetStats => handle_stats_now(bot, msg).await?,
                     },
                     None => send_help(bot, msg).await?,
                 },
@@ -85,13 +82,11 @@ impl ClientBot {
         let now: chrono::prelude::DateTime<Utc> = Utc::now();
         let mut day: tokio::sync::MutexGuard<'_, u32> = day.lock().await;
 
+        // println!("{}", now);
+
         if *day != now.day() && now.hour() == 7 {
-            println!("Giving new daily stats");
-            // Send daily stats to everyone who subscribed here
-            // self.bot
-            //     .send_message("".to_string(), "daily stats")
-            //     .await?;
-            *day = now.minute();
+            handle_daily(self.bot.clone()).await?;
+            *day = now.day();
         }
         Ok(())
     }
