@@ -1,6 +1,6 @@
 use crate::server::db::POOL;
 use futures::future::join_all;
-use sqlx::{postgres::PgRow, prelude::FromRow, types::Uuid, Row};
+use sqlx::{prelude::FromRow, types::Uuid};
 use std::sync::Arc;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
@@ -15,7 +15,7 @@ pub struct Chat {
 
 pub async fn get_chat(telegram_chat_id: String) -> Result<Option<Chat>, sqlx::Error> {
     let pool: &Arc<sqlx::Pool<sqlx::Postgres>> = POOL.get().expect("Pool has not been initialized");
-    let q = "SELECT * FROM chats WHERE telegram_chat_id = $1";
+    // let q = "SELECT * FROM chats WHERE telegram_chat_id = $1";
     let chat: Option<Chat> = sqlx::query_as!(
         Chat,
         "SELECT * FROM chats WHERE telegram_chat_id = $1",
