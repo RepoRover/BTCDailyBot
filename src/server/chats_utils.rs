@@ -16,27 +16,27 @@ pub struct Chat {
 pub async fn get_chat(telegram_chat_id: String) -> Result<Option<Chat>, sqlx::Error> {
     let pool: &Arc<sqlx::Pool<sqlx::Postgres>> = POOL.get().expect("Pool has not been initialized");
     let q = "SELECT * FROM chats WHERE telegram_chat_id = $1";
-    // let chat: Option<Chat> = sqlx::query_as!(
-    //     Chat,
-    //     "SELECT * FROM chats WHERE telegram_chat_id = $1",
-    //     telegram_chat_id
-    // )
-    // .fetch_optional(&**pool)
-    // .await?;
-    let chat: Option<PgRow> = sqlx::query(q)
-        .bind(telegram_chat_id)
-        .fetch_optional(&**pool)
-        .await?;
+    let chat: Option<Chat> = sqlx::query_as!(
+        Chat,
+        "SELECT * FROM chats WHERE telegram_chat_id = $1",
+        telegram_chat_id
+    )
+    .fetch_optional(&**pool)
+    .await?;
+    // let chat: Option<PgRow> = sqlx::query(q)
+    //     .bind(telegram_chat_id)
+    //     .fetch_optional(&**pool)
+    //     .await?;
 
-    match chat {
-        Some(row) => Ok(Some(Chat {
-            chat_id: row.get("chat_id"),
-            telegram_chat_id: row.get("telegram_chat_id"),
-        })),
-        None => Ok(None),
-    }
+    // match chat {
+    //     Some(row) => Ok(Some(Chat {
+    //         chat_id: row.get("chat_id"),
+    //         telegram_chat_id: row.get("telegram_chat_id"),
+    //     })),
+    //     None => Ok(None),
+    // }
 
-    // Ok(chat)
+    Ok(chat)
 }
 
 pub async fn subscribe(telegram_chat_id: String) -> Result<(), sqlx::Error> {
