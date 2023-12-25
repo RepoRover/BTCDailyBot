@@ -1,6 +1,7 @@
 use crate::server::{
     chats::{handle_daily, handle_stats_now, handle_subscription, handle_unsubscribtion},
     chats_utils::send_help,
+    side_utils::print_error,
 };
 use chrono::{Datelike, Timelike, Utc};
 use std::sync::Arc;
@@ -71,7 +72,7 @@ impl ClientBot {
                     Self::daily_stats(self, &day).await?;
                 }
                 _ = shutdown_signal.recv() => {
-                    eprintln!("Shutting down periodic task");
+                    print_error("Shut down", "Shutting down periodic task");
                     return Ok(())
                 }
             }

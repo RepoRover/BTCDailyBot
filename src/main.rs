@@ -5,6 +5,7 @@ use bot_client::ClientBot;
 use chrono::{Datelike, Utc};
 use server::db::init_pool;
 use server::db::POOL;
+use server::side_utils::print_error;
 use std::sync::Arc;
 use tokio::{
     signal,
@@ -13,7 +14,9 @@ use tokio::{
 
 #[tokio::main]
 async fn main() {
+    print_error("Starting application", "");
     dotenv::dotenv().ok();
+    print_error("Evironment is set", "");
 
     let pool: Arc<sqlx::Pool<sqlx::Postgres>> =
         init_pool().await.expect("Failed to initialize pool");
@@ -44,10 +47,10 @@ async fn main() {
 
     tokio::select! {
         _ = signal::ctrl_c() => {
-            eprintln!("Ctrl-C received, shutting down");
+            print_error("Shut down", "Ctrl-C received, shutting down");
         }
         _ = messages_handle => {
-            eprintln!("Bot stopped");
+            print_error("Bot error", "Bot stopped");
         }
     }
 

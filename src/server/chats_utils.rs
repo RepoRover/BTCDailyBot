@@ -1,10 +1,11 @@
-use crate::server::db::POOL;
+use crate::server::side_utils::print_error;
+
+use super::binance_api::Statistics;
+use super::db::POOL;
 use futures::future::join_all;
 use sqlx::{prelude::FromRow, types::Uuid};
 use std::sync::Arc;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
-
-use super::binance_api::Statistics;
 
 #[derive(Debug, FromRow)]
 #[allow(dead_code)]
@@ -23,18 +24,6 @@ pub async fn get_chat(telegram_chat_id: String) -> Result<Option<Chat>, sqlx::Er
     )
     .fetch_optional(&**pool)
     .await?;
-    // let chat: Option<PgRow> = sqlx::query(q)
-    //     .bind(telegram_chat_id)
-    //     .fetch_optional(&**pool)
-    //     .await?;
-
-    // match chat {
-    //     Some(row) => Ok(Some(Chat {
-    //         chat_id: row.get("chat_id"),
-    //         telegram_chat_id: row.get("telegram_chat_id"),
-    //     })),
-    //     None => Ok(None),
-    // }
 
     Ok(chat)
 }
@@ -94,7 +83,7 @@ Price - {} USDT"#,
             match send_daily_stats_single(chat_id.clone(), &bot_clone, stats_text_clone).await {
                 Ok(_) => {}
                 Err(e) => {
-                    eprintln!("Error while sending daily stats: {}", e);
+                    print_error("Send daily statistics", e);
                     let _ = &bot_clone.send_message(chat_id, "Something went wrong with sending you daily statistics, try to get them with running /getstats").await;
                 }
             };

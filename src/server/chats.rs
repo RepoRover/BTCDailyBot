@@ -3,6 +3,7 @@ use super::{
     chats_utils::{
         get_chat, send_daily_stats_all, send_daily_stats_single, subscribe, unsubscribe,
     },
+    side_utils::print_error,
 };
 use std::{env, sync::Arc};
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
@@ -19,7 +20,7 @@ pub async fn handle_subscription(bot: Bot, msg: Message) -> Result<Message, Requ
                     .await
             }
             Err(e) => {
-                eprintln!("Error subscribing: {}", e);
+                print_error("Error subscribing", e);
                 bot.send_message(msg.chat.id, "Failed to subscribe, try again later")
                     .await
             }
@@ -35,7 +36,7 @@ pub async fn handle_unsubscribtion(bot: Bot, msg: Message) -> Result<Message, Re
                     .await
             }
             Err(e) => {
-                eprintln!("Error subscribing: {}", e);
+                print_error("Error unsubscribing", e);
                 bot.send_message(msg.chat.id, "Failed to unsubscribe, try again later")
                     .await
             }
@@ -59,7 +60,7 @@ pub async fn handle_daily(bot: Bot) -> Result<Message, RequestError> {
                 .await
         }
         Err(e) => {
-            eprintln!("Failed to send stats, {}", e);
+            print_error("Failed to send stats", e);
             bot_clone
                 .send_message(admin_chat_id, "Daily stats are sent")
                 .await
@@ -81,6 +82,10 @@ Price - {} USDT"#,
             )
         }
         true => {
+            print_error(
+                "Send statistics now",
+                "Something is wrong with getting statistics, None fields found",
+            );
             format!(r#"Something is wrong with getting statistics right now"#)
         }
     };
